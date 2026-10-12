@@ -1,0 +1,55 @@
+
+services:
+  quizapp_service:
+    image: narcossice/quizapp_backend:latest
+    container_name: quizapp
+    volumes:
+      - ./app:/quizapp/app
+      - ./app/media:/quizapp/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres_service
+      - redis_service
+    command: ["./start.sh"]
+
+  postgres_service:
+    image: postgres:15.5
+    container_name: quizapp_postgres
+    volumes:
+     - ~/.pg/pg_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-c", "timezone=Europe/Kyiv"]
+
+  redis_service:
+    image: redis:7
+    container_name: quizapp_redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    image: narcossice/quizapp_backend:latest
+    container_name: quizapp_celery
+    environment:
+      - PYTHONPATH=/quizapp/app
+    command: celery -A app.core.celery.celery_app worker --loglevel=info
+    volumes:
+      - ./app:/quizapp/app
+    depends_on:
+      - postgres_service
+      - redis_service
+
+  celery_beat:
+    image: narcossice/quizapp_backend:latest
+    container_name: quizapp_celery_beat
+    environment:
+      - PYTHONPATH=/quizapp/app
+    command: celery -A app.core.celery.celery_app beat --loglevel=info
+    volumes:
+      - ./app:/quizapp/app
+    depends_on:
+      - postgres_service
+      - redis_service

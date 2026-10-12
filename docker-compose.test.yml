@@ -1,0 +1,10 @@
+services:
+  test_postgres:
+    image: postgres:15
+    container_name: test_postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.test
+    volumes:
+      - ~/.pg/pg_test_data:/var/lib/postgresql/data
